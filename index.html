@@ -329,6 +329,16 @@
     @media (hover: hover) { #acai .card:hover { border-color: #9B30A0; } }
     #acai .btn-add { background: linear-gradient(135deg, #9B30A0, #4B0082); }
 
+    .acai-toppings-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 560px) { .acai-toppings-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 900px) { .acai-toppings-grid { grid-template-columns: repeat(4, 1fr); } }
+    .acai-topping-card .card-body { padding: 12px 12px 12px; }
+    .acai-topping-card .card-name { font-size: 0.85rem; }
+    .acai-topping-card .card-desc { font-size: 0.68rem; }
+
+    .chip-label.chip-esgotado { opacity: 0.4; cursor: not-allowed; }
+    .chip-label.chip-esgotado .chip-inner { text-decoration: line-through; }
+
     /* ─── ESGOTADO ─── */
     .card.esgotado { position: relative; }
     .card.esgotado .card-body, .card.esgotado .card-footer { opacity: 0.45; filter: grayscale(60%); }
@@ -1625,7 +1635,7 @@
         </div>
         <div class="card-footer">
           <div class="card-price">R$ 18,00</div>
-          <button class="btn-add" onclick="addSimple('acai-300','Açaí 300ml',18.00,'')" aria-label="Adicionar Açaí 300ml">
+          <button class="btn-add" onclick="openModalAcai('acai-300','Açaí 300ml',18.00)" aria-label="Adicionar Açaí 300ml">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             Adicionar
           </button>
@@ -1639,7 +1649,7 @@
         </div>
         <div class="card-footer">
           <div class="card-price">R$ 20,00</div>
-          <button class="btn-add" onclick="addSimple('acai-400','Açaí 400ml',20.00,'')" aria-label="Adicionar Açaí 400ml">
+          <button class="btn-add" onclick="openModalAcai('acai-400','Açaí 400ml',20.00)" aria-label="Adicionar Açaí 400ml">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             Adicionar
           </button>
@@ -1653,7 +1663,7 @@
         </div>
         <div class="card-footer">
           <div class="card-price">R$ 25,00</div>
-          <button class="btn-add" onclick="addSimple('acai-500','Açaí 500ml',25.00,'')" aria-label="Adicionar Açaí 500ml">
+          <button class="btn-add" onclick="openModalAcai('acai-500','Açaí 500ml',25.00)" aria-label="Adicionar Açaí 500ml">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             Adicionar
           </button>
@@ -1662,13 +1672,8 @@
 
     </div>
 
-    <div class="subcategory-label">Acompanhamentos</div>
-    <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;">
-      <div style="font-size:0.82rem;color:var(--text-sm);line-height:1.7;">
-        Uva, Kiwi, Morango, Banana, Manga, Abacaxi, Kit Kat, Sucrilhos, Paçoca, Leite Condensado, Leite Ninho, Ovomaltine, Confete, Granola, Bis ao Leite, Bis Branco, Creme de Avelã, Sonho de Valsa, Ouro Branco.
-      </div>
-      <div style="margin-top:10px;font-family:'Cinzel',serif;font-weight:700;font-size:0.85rem;color:var(--gold);">Adicionais extras a partir de R$ 5,00</div>
-    </div>
+    <div class="subcategory-label">Acompanhamentos <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem;color:var(--text-sm);">(3 inclusos grátis · a partir do 4º, +R$ 5,00 cada)</span></div>
+    <div class="cards-grid acai-toppings-grid" id="acai-toppings-grid"></div>
   </section>
 
   <!-- ── BATATA ────────────────────────────────────────────────────────── -->
@@ -2522,6 +2527,38 @@
   </div>
 </div>
 
+<!-- ═══ MODAL AÇAÍ ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-acai">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Montar Açaí">
+    <div class="modal-header">
+      <div class="modal-title" id="acai-modal-title">🍇 Açaí</div>
+      <div class="modal-price" id="acai-modal-price">R$ 0,00</div>
+      <button class="modal-close" onclick="closeModal('acai')" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="option-group">
+        <div class="option-group-label">Acompanhamentos <span class="option-optional" id="acai-modal-contador">Escolha até 3 inclusos</span></div>
+        <div class="chips" id="acai-chips-wrap"></div>
+      </div>
+      <div class="option-group">
+        <div class="option-group-label">Observação <span class="option-optional">Opcional</span></div>
+        <textarea id="acai-obs" class="obs-textarea" placeholder="Ex: pouca granola, sem leite condensado, etc." rows="2"></textarea>
+      </div>
+      <div class="modal-qty-row">
+        <div class="qty-label">Quantidade</div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty('modal-acai', -1)" aria-label="Diminuir">−</button>
+          <span class="qty-val" id="qty-acai">1</span>
+          <button class="qty-btn" onclick="changeQty('modal-acai', 1)" aria-label="Aumentar">+</button>
+        </div>
+      </div>
+      <button class="btn-confirm" onclick="confirmAcai()">
+        Adicionar ao carrinho
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ NAVEGAÇÃO LATERAL / VOLTAR AO TOPO ════════════════════════════════ -->
 <button class="side-next-btn" id="side-next-btn" onclick="proximaCategoria()" aria-label="Próxima categoria">
   <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
@@ -3069,6 +3106,108 @@ function confirmHotdog() {
   showToast(_hotdogAtual.nome + ' adicionado ao carrinho! 🌭');
 }
 
+/* ─── AÇAÍ: ACOMPANHAMENTOS ─── */
+const ACAI_TOPPINGS = [
+  { id: 'acai-add-uva', nome: 'Uva' },
+  { id: 'acai-add-kiwi', nome: 'Kiwi' },
+  { id: 'acai-add-morango', nome: 'Morango' },
+  { id: 'acai-add-banana', nome: 'Banana' },
+  { id: 'acai-add-manga', nome: 'Manga' },
+  { id: 'acai-add-abacaxi', nome: 'Abacaxi' },
+  { id: 'acai-add-kitkat', nome: 'Kit Kat' },
+  { id: 'acai-add-sucrilhos', nome: 'Sucrilhos' },
+  { id: 'acai-add-pacoca', nome: 'Paçoca' },
+  { id: 'acai-add-leite-condensado', nome: 'Leite Condensado' },
+  { id: 'acai-add-leite-ninho', nome: 'Leite Ninho' },
+  { id: 'acai-add-ovomaltine', nome: 'Ovomaltine' },
+  { id: 'acai-add-confete', nome: 'Confete' },
+  { id: 'acai-add-granola', nome: 'Granola' },
+  { id: 'acai-add-bis-leite', nome: 'Bis ao Leite' },
+  { id: 'acai-add-bis-branco', nome: 'Bis Branco' },
+  { id: 'acai-add-creme-avela', nome: 'Creme de Avelã' },
+  { id: 'acai-add-sonho-valsa', nome: 'Sonho de Valsa' },
+  { id: 'acai-add-ouro-branco', nome: 'Ouro Branco' }
+];
+const ACAI_INCLUSOS = 3;
+const ACAI_PRECO_EXTRA = 5.00;
+
+function renderAcaiToppingsGrid() {
+  const grid = document.getElementById('acai-toppings-grid');
+  if (!grid) return;
+  grid.innerHTML = ACAI_TOPPINGS.map(t => `
+    <div class="card acai-topping-card" data-produto-id="${t.id}" data-preco-base="${ACAI_PRECO_EXTRA.toFixed(2)}">
+      <div class="card-body">
+        <div class="card-name">${t.nome}</div>
+        <div class="card-desc">Grátis entre os 3 inclusos, ou avulso a partir do 4º.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-price">R$ ${ACAI_PRECO_EXTRA.toFixed(2).replace('.', ',')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function _precoToppingAcai(id) {
+  return _precosCustom[id] ?? ACAI_PRECO_EXTRA;
+}
+
+/* ─── MODAL AÇAÍ ─── */
+let _acaiAtual = null;
+
+function openModalAcai(id, nome, preco) {
+  preco = _precosCustom[id] ?? preco;
+  _acaiAtual = { id, nome, preco };
+  document.getElementById('acai-modal-title').textContent = '🍇 ' + nome;
+  document.getElementById('qty-acai').textContent = '1';
+  document.getElementById('acai-obs').value = '';
+
+  const wrap = document.getElementById('acai-chips-wrap');
+  wrap.innerHTML = ACAI_TOPPINGS.map(t => {
+    const esgotado = document.querySelector(`[data-produto-id="${t.id}"]`)?.classList.contains('esgotado');
+    return `<label class="chip-label${esgotado ? ' chip-esgotado' : ''}">
+      <input type="checkbox" name="acai-adicional" value="${t.nome}" data-id="${t.id}" ${esgotado ? 'disabled' : ''} onchange="atualizarPrecoAcai()"/>
+      <span class="chip-inner">${t.nome}${esgotado ? ' (Esgotado)' : ''}</span>
+    </label>`;
+  }).join('');
+
+  atualizarPrecoAcai();
+  openModal('acai');
+}
+
+function _acaiExtraTotal() {
+  const marcados = [...document.querySelectorAll('[name="acai-adicional"]:checked')];
+  const extras = marcados.slice(ACAI_INCLUSOS);
+  const extraPreco = extras.reduce((s, c) => s + _precoToppingAcai(c.dataset.id), 0);
+  return { marcados, extras, extraPreco };
+}
+
+function atualizarPrecoAcai() {
+  if (!_acaiAtual) return;
+  const { marcados, extras, extraPreco } = _acaiExtraTotal();
+  const qty = parseInt(document.getElementById('qty-acai').textContent) || 1;
+  document.getElementById('acai-modal-price').textContent = formatBRL((_acaiAtual.preco + extraPreco) * qty);
+  const contador = document.getElementById('acai-modal-contador');
+  contador.textContent = extras.length > 0
+    ? `${ACAI_INCLUSOS} inclusos + ${extras.length} extra(s) (+${formatBRL(extraPreco)})`
+    : `Escolha até ${ACAI_INCLUSOS} inclusos (${marcados.length}/${ACAI_INCLUSOS})`;
+}
+
+function confirmAcai() {
+  if (!_acaiAtual) return;
+  const { marcados, extraPreco } = _acaiExtraTotal();
+  const nomes = marcados.map(c => c.value);
+  const obs = document.getElementById('acai-obs').value.trim();
+  const qty = parseInt(document.getElementById('qty-acai').textContent);
+  const precoFinal = _acaiAtual.preco + extraPreco;
+  const detalheArr = [];
+  if (nomes.length) detalheArr.push('+ ' + nomes.join(', '));
+  if (obs) detalheArr.push(obs);
+  for (let i = 0; i < qty; i++) {
+    addToCart(_acaiAtual.id, _acaiAtual.nome, precoFinal, detalheArr.join(' · '));
+  }
+  closeModal('acai');
+  showToast(_acaiAtual.nome + ' adicionado ao carrinho! 🍇');
+}
+
 /* ─── MODAL MILKSHAKE ─── */
 function openModalMilkshake() {
   document.getElementById('qty-milkshake').textContent = '1';
@@ -3498,12 +3637,13 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 
 /* ─── QTY ─── */
 function changeQty(modalId, delta) {
-  const map = { 'modal-burguer': 'qty-burguer', 'modal-milkshake': 'qty-milkshake', 'modal-hotdog': 'qty-hotdog' };
+  const map = { 'modal-burguer': 'qty-burguer', 'modal-milkshake': 'qty-milkshake', 'modal-hotdog': 'qty-hotdog', 'modal-acai': 'qty-acai' };
   const el = document.getElementById(map[modalId]);
   if (!el) return;
   el.textContent = Math.max(1, parseInt(el.textContent) + delta);
   if (modalId === 'modal-burguer') atualizarPrecoBurguer();
   if (modalId === 'modal-hotdog')  atualizarPrecoHotdog();
+  if (modalId === 'modal-acai')    atualizarPrecoAcai();
 }
 
 /* ─── ADMIN ─── */
@@ -4032,6 +4172,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 /* ─── INIT ─── */
+renderAcaiToppingsGrid();
 updateCartUI();
 carregarEstados();
 document.getElementById('hamburgueres').classList.add('ativa');
