@@ -64,6 +64,27 @@
       padding: 26px 20px 20px;
       text-align: center;
       position: relative;
+      overflow: hidden;
+    }
+    .header-bg-layer {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 1s ease;
+      z-index: 0;
+      pointer-events: none;
+      filter: saturate(1.05) blur(0.5px);
+      transform: scale(1.05);
+    }
+    .header-bg-layer.show { opacity: 0.36; }
+    .header-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.72) 75%);
+      z-index: 1;
+      pointer-events: none;
     }
     .header-inner {
       display: flex;
@@ -73,6 +94,8 @@
       gap: 12px;
       max-width: 640px;
       margin: 0 auto;
+      position: relative;
+      z-index: 2;
     }
     @keyframes logo-glow {
       0%, 100% { box-shadow: 0 0 0 2px #FFD700, 0 0 12px 2px rgba(255,215,0,0.3), 0 4px 18px rgba(0,0,0,0.6); }
@@ -980,6 +1003,9 @@
 
 <!-- ═══ HEADER ═══════════════════════════════════════════════════════════ -->
 <header class="site-header">
+  <div class="header-bg-layer" id="headerBgA"></div>
+  <div class="header-bg-layer" id="headerBgB"></div>
+  <div class="header-overlay"></div>
   <div class="header-inner">
     <img src="/favicon.jpg" alt="Varanda Lanches" class="header-logo" width="130" height="130" decoding="async" />
     <div class="header-text">
@@ -2948,6 +2974,42 @@ function showToast(msg, dur) {
 }
 
 /* ─── NAV ─── */
+const _headerBgMap = {
+  hamburgueres: '/categorias-bg/hamburgueres.jpg',
+  especiais:    '/categorias-bg/especiais.jpg',
+  hotdog:       '/categorias-bg/hotdog.jpg',
+  acai:         '/categorias-bg/acai.jpg',
+  batata:       '/categorias-bg/batata.jpg',
+  churros:      '/categorias-bg/churros.jpg',
+  pastel:       '/categorias-bg/pastel.jpg',
+  bebidas:      '/categorias-bg/bebidas.jpg',
+  combos:       '/categorias-bg/combos.jpg',
+};
+const _headerBgPosMap = {
+  acai:   'center 12%',
+  pastel: 'center 18%',
+};
+let _headerBgAtual = '';
+function atualizarHeaderBg(id) {
+  const src = _headerBgMap[id] || '';
+  if (src === _headerBgAtual) return;
+  _headerBgAtual = src;
+  const a = document.getElementById('headerBgA');
+  const b = document.getElementById('headerBgB');
+  if (!a || !b) return;
+  const visivel = a.classList.contains('show') ? a : b;
+  const oculta  = visivel === a ? b : a;
+  if (src) {
+    oculta.style.backgroundImage = `url('${src}')`;
+    oculta.style.backgroundPosition = _headerBgPosMap[id] || 'center center';
+    oculta.classList.add('show');
+    visivel.classList.remove('show');
+  } else {
+    visivel.classList.remove('show');
+    oculta.classList.remove('show');
+  }
+}
+
 function navegarPara(id) {
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('onclick').includes("'" + id + "'"));
@@ -2955,6 +3017,7 @@ function navegarPara(id) {
   document.querySelectorAll('.category-section').forEach(s => s.classList.remove('ativa'));
   const el = document.getElementById(id);
   if (el) { el.classList.add('ativa'); el.classList.add('fade-in'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  atualizarHeaderBg(id);
 }
 
 function filterCategory(id) {
@@ -4035,6 +4098,7 @@ window.addEventListener('scroll', () => {
 updateCartUI();
 carregarEstados();
 document.getElementById('hamburgueres').classList.add('ativa');
+atualizarHeaderBg('hamburgueres');
 </script>
 </body>
 </html>
