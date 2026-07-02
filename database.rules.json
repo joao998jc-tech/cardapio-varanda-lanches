@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "estado": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

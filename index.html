@@ -2902,6 +2902,19 @@
   </div>
 </div>
 
+<!-- ═══ FIREBASE (sincronização em tempo real do admin com os clientes) ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyDIORooIwE87hgWfLMvgxrbrCOKOiR4Yvk",
+    authDomain: "varanda-lanches-jc998.firebaseapp.com",
+    databaseURL: "https://varanda-lanches-jc998-default-rtdb.firebaseio.com",
+    projectId: "varanda-lanches-jc998"
+  });
+  const dbEstadoRef = firebase.database().ref('estado');
+</script>
+
 <!-- ═══ JAVASCRIPT ══════════════════════════════════════════════════════ -->
 <script>
 /* ─── CONFIG ─── */
@@ -2910,7 +2923,7 @@ const WHATSAPP_NUM = '5515996013988';
 // ⚠️ SUBSTITUA pela senha admin desejada:
 const ADMIN_SENHA  = '1234';
 // Taxa de entrega (0 = a combinar — exibe aviso):
-let TAXA_ENTREGA = parseFloat(localStorage.getItem('varanda_taxa') ?? '5.00');
+let TAXA_ENTREGA = 5.00;
 
 /* ─── ESTADO ─── */
 let cart = [];
@@ -3505,7 +3518,6 @@ function tentarLogin() {
       .forEach(id => document.getElementById(id)?.classList.add('visible'));
     document.getElementById('admin-fab').classList.remove('visible');
     showToast('Modo admin ativado ✅');
-    carregarEstados();
   } else {
     document.getElementById('admin-erro').style.display = '';
   }
@@ -3519,23 +3531,31 @@ function sairAdmin() {
   showToast('Admin desconectado.');
 }
 
-function toggleAtendimento() {
-  _atendendo = !_atendendo;
+function renderAtendimento(atendendo) {
   const faixa = document.getElementById('atendimento-faixa');
-  faixa.className = 'atendimento-faixa ' + (_atendendo ? 'aberto' : 'fechado');
-  faixa.textContent = _atendendo ? '⭐ Estamos atendendo agora!' : '🔴 Estabelecimento fechado no momento.';
-  salvarEstados();
+  faixa.className = 'atendimento-faixa ' + (atendendo ? 'aberto' : 'fechado');
+  faixa.textContent = atendendo ? '⭐ Estamos atendendo agora!' : '🔴 Estabelecimento fechado no momento.';
 }
 
-function togglePausa() {
-  _pausaAtiva = !_pausaAtiva;
+function renderPausa(pausa) {
   const banner = document.getElementById('pausa-banner');
-  if (_pausaAtiva) {
+  if (pausa) {
     banner.textContent = '⏸️ Pedidos pausados temporariamente. Voltamos em breve!';
     banner.classList.add('ativa');
   } else {
     banner.classList.remove('ativa');
   }
+}
+
+function toggleAtendimento() {
+  _atendendo = !_atendendo;
+  renderAtendimento(_atendendo);
+  salvarEstados();
+}
+
+function togglePausa() {
+  _pausaAtiva = !_pausaAtiva;
+  renderPausa(_pausaAtiva);
   salvarEstados();
   showToast(_pausaAtiva ? 'Pedidos pausados.' : 'Pedidos reativados.');
 }
@@ -3642,7 +3662,7 @@ function ativarPromo() {
 
   document.getElementById('promo-titulo-texto').innerHTML = _htmlBalao(_promoAtual);
   document.getElementById('promo-balao').removeAttribute('hidden');
-  localStorage.setItem('varanda_promo', JSON.stringify(_promoAtual));
+  salvarEstados();
   closeModal('admin-promo');
   showToast('Promoção ativada! 🔥');
 }
@@ -3650,7 +3670,7 @@ function ativarPromo() {
 function desativarPromo() {
   desativarEfeitoPromo();
   document.getElementById('promo-balao').setAttribute('hidden', '');
-  localStorage.removeItem('varanda_promo');
+  salvarEstados();
   closeModal('admin-promo');
   showToast('Promoção encerrada.');
 }
@@ -3751,9 +3771,9 @@ function abrirConfig() {
 function salvarConfig() {
   const val = parseFloat(document.getElementById('taxa-input').value);
   TAXA_ENTREGA = isNaN(val) || val < 0 ? 0 : val;
-  localStorage.setItem('varanda_taxa', TAXA_ENTREGA.toFixed(2));
   const el = document.getElementById('taxa-entrega-display');
   if (el) el.textContent = TAXA_ENTREGA > 0 ? 'R$ ' + TAXA_ENTREGA.toFixed(2).replace('.', ',') : 'A combinar';
+  salvarEstados();
   closeModal('admin-config');
   showToast('Configurações salvas! ✅');
 }
@@ -3846,6 +3866,7 @@ function confirmarNovoItem() {
 }
 
 function renderizarItemCustom(item) {
+  if (document.querySelector(`[data-produto-id="${item.id}"]`)) return; // já renderizado
   const section = document.getElementById(item.categoria);
   if (!section) return;
   const card = document.createElement('div');
@@ -3869,61 +3890,95 @@ function renderizarItemCustom(item) {
   grid.appendChild(card);
 }
 
-/* ─── ESTADOS ─── */
+/* ─── ESTADOS (sincronizados em tempo real via Firebase) ─── */
 function salvarEstados() {
   const esgotados = [...document.querySelectorAll('.card.esgotado')].map(c => c.dataset.produtoId);
-  localStorage.setItem('varanda_estados', JSON.stringify({
+  const estado = {
     atendendo: _atendendo,
     pausa: _pausaAtiva,
+    taxa: TAXA_ENTREGA,
+    promo: _promoAtual,
     esgotados,
     removidos: _itensRemovidos,
     precos: _precosCustom,
     itensCustom: _itensCustom,
     categoriasCustum: _categoriasCustum
-  }));
+  };
+  localStorage.setItem('varanda_estados', JSON.stringify(estado)); // cache offline
+  dbEstadoRef.set(estado);
+}
+
+/* Aplica um estado recebido (do Firebase ou do cache local) — idempotente,
+   pode ser chamada várias vezes seguidas sem duplicar nada na tela. */
+function aplicarEstado(est) {
+  if (!est) return;
+
+  _atendendo = typeof est.atendendo === 'boolean' ? est.atendendo : true;
+  renderAtendimento(_atendendo);
+
+  _pausaAtiva = !!est.pausa;
+  renderPausa(_pausaAtiva);
+
+  TAXA_ENTREGA = typeof est.taxa === 'number' ? est.taxa : 5.00;
+  const taxaEl = document.getElementById('taxa-entrega-display');
+  if (taxaEl) taxaEl.textContent = TAXA_ENTREGA > 0 ? 'R$ ' + TAXA_ENTREGA.toFixed(2).replace('.', ',') : 'A combinar';
+
+  /* categorias e itens customizados primeiro (podem conter os produtos citados abaixo) */
+  if (est.categoriasCustum) { _categoriasCustum = est.categoriasCustum; _categoriasCustum.forEach(_instanciarCategoria); }
+  if (est.itensCustom) { _itensCustom = est.itensCustom; _itensCustom.forEach(renderizarItemCustom); }
+
+  /* esgotados — aplica e também limpa quem não está mais na lista */
+  const esgotadosSet = new Set(est.esgotados || []);
+  document.querySelectorAll('[data-produto-id]').forEach(card => {
+    card.classList.toggle('esgotado', esgotadosSet.has(card.dataset.produtoId));
+  });
+
+  /* itens removidos pelo admin */
+  _itensRemovidos = est.removidos || [];
+  const removidosSet = new Set(_itensRemovidos);
+  document.querySelectorAll('[data-produto-id]').forEach(card => {
+    card.style.display = removidosSet.has(card.dataset.produtoId) ? 'none' : '';
+  });
+
+  /* preços customizados */
+  _precosCustom = est.precos || {};
+  Object.entries(_precosCustom).forEach(([id, preco]) => {
+    const priceEl = document.querySelector(`[data-produto-id="${id}"] .card-price`);
+    if (priceEl && !priceEl.querySelector('input')) priceEl.textContent = 'R$ ' + preco.toFixed(2).replace('.', ',');
+  });
+
+  /* promoção */
+  const promoMudou = JSON.stringify(_promoAtual) !== JSON.stringify(est.promo || null);
+  if (promoMudou) {
+    desativarEfeitoPromo();
+    if (est.promo && est.promo.produtoId) {
+      _promoAtual = est.promo;
+      aplicarEfeitoPromo(_promoAtual);
+      document.getElementById('promo-titulo-texto').innerHTML = _htmlBalao(_promoAtual);
+      document.getElementById('promo-balao').removeAttribute('hidden');
+    } else {
+      document.getElementById('promo-balao').setAttribute('hidden', '');
+    }
+  }
 }
 
 function carregarEstados() {
-  /* Promoção — suporta formato novo (JSON) e antigo (string) */
-  const promoRaw = localStorage.getItem('varanda_promo');
-  if (promoRaw) {
-    try {
-      const promo = JSON.parse(promoRaw);
-      if (promo && promo.produtoId) {
-        _promoAtual = promo;
-        aplicarEfeitoPromo(promo);
-        document.getElementById('promo-titulo-texto').innerHTML = _htmlBalao(promo);
-        document.getElementById('promo-balao').removeAttribute('hidden');
-      } else {
-        /* Formato antigo — exibe texto simples */
-        document.getElementById('promo-titulo-texto').textContent = promoRaw;
-        document.getElementById('promo-balao').removeAttribute('hidden');
-      }
-    } catch(e) {
-      document.getElementById('promo-titulo-texto').textContent = promoRaw;
-      document.getElementById('promo-balao').removeAttribute('hidden');
-    }
-  }
-  // taxa
-  TAXA_ENTREGA = parseFloat(localStorage.getItem('varanda_taxa') ?? '5.00');
-  const taxaEl = document.getElementById('taxa-entrega-display');
-  if (taxaEl) taxaEl.textContent = TAXA_ENTREGA > 0 ? 'R$ ' + TAXA_ENTREGA.toFixed(2).replace('.', ',') : 'A combinar';
+  /* cache local imediato (evita "flash" de conteúdo padrão enquanto o Firebase carrega) */
   try {
-    const est = JSON.parse(localStorage.getItem('varanda_estados') || '{}');
-    if (est.esgotados) est.esgotados.forEach(id => document.querySelector(`[data-produto-id="${id}"]`)?.classList.add('esgotado'));
-    if (est.removidos) { _itensRemovidos = est.removidos; est.removidos.forEach(id => { const c = document.querySelector(`[data-produto-id="${id}"]`); if (c) c.style.display = 'none'; }); }
-    if (est.precos) {
-      _precosCustom = est.precos;
-      Object.entries(_precosCustom).forEach(([id, preco]) => {
-        const priceEl = document.querySelector(`[data-produto-id="${id}"] .card-price`);
-        if (priceEl && !priceEl.querySelector('input')) priceEl.textContent = 'R$ ' + preco.toFixed(2).replace('.', ',');
-      });
-    }
-    if (est.categoriasCustum) { _categoriasCustum = est.categoriasCustum; _categoriasCustum.forEach(_instanciarCategoria); }
-    if (est.itensCustom) { _itensCustom = est.itensCustom; _itensCustom.forEach(renderizarItemCustom); }
-    if (typeof est.atendendo === 'boolean' && !est.atendendo) toggleAtendimento();
-    if (est.pausa) togglePausa();
+    const cache = JSON.parse(localStorage.getItem('varanda_estados') || 'null');
+    if (cache) aplicarEstado(cache);
   } catch(e) {}
+
+  /* escuta o Firebase em tempo real — qualquer alteração do admin chega aqui
+     instantaneamente, em todos os clientes com o site aberto, sem precisar
+     atualizar a página. */
+  dbEstadoRef.on('value', snapshot => {
+    const est = snapshot.val();
+    if (est) {
+      localStorage.setItem('varanda_estados', JSON.stringify(est));
+      aplicarEstado(est);
+    }
+  });
 }
 
 /* ─── URL ADMIN ─── */
