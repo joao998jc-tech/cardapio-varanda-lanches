@@ -3,6 +3,14 @@
     "estado": {
       ".read": true,
       ".write": true
+    },
+    "estado_espetinho_ruivo": {
+      ".read": true,
+      ".write": true
+    },
+    "estado_centerburguer": {
+      ".read": true,
+      ".write": true
     }
   }
 }

@@ -3307,6 +3307,7 @@ function _irParaCheckout() {
 
 function iniciarCheckout() {
   if (cart.length === 0) return;
+  if (!_atendendo) { showToast('🔴 Estamos fechados no momento. Volte quando abrirmos para enviar seu pedido!'); return; }
   if (_pausaAtiva) { showToast('Pedidos pausados no momento. Tente mais tarde.'); return; }
   closeCart();
   if (!temBebida()) {
@@ -3517,6 +3518,7 @@ function renderResumo() {
 }
 
 function checkoutEnviarWhatsapp() {
+  if (!_atendendo) { showToast('🔴 Estamos fechados no momento. Não é possível enviar pedidos agora.'); return; }
   fecharCheckoutModal('resumo');
   finalizarPedido();
 }
@@ -3787,6 +3789,36 @@ let _precosCustom = {};
 let _itensRemovidos = [];
 let _itensCustom = [];
 let _categoriasCustum = [];
+let _disponibilidades = {};
+
+function renderDisponibilidade(card, texto) {
+  const id = card.dataset.produtoId;
+  let el = card.querySelector('.card-disponibilidade');
+  if (texto) {
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'card-disponibilidade';
+      el.style.cssText = 'font-size:0.72rem;font-weight:700;color:#e67e00;margin-top:4px;';
+      const desc = card.querySelector('.card-desc');
+      (desc || card.querySelector('.card-body') || card).insertAdjacentElement('afterend', el);
+    }
+    el.textContent = '🗓️ ' + texto;
+  } else if (el) {
+    el.remove();
+  }
+}
+
+function ativarEdicaoDisponibilidade(card) {
+  const id = card.dataset.produtoId;
+  const atual = _disponibilidades[id] || '';
+  const texto = prompt('Disponibilidade especial deste item (ex.: "Apenas aos finais de semana"). Deixe em branco para remover.', atual);
+  if (texto === null) return;
+  const val = texto.trim();
+  if (val) _disponibilidades[id] = val; else delete _disponibilidades[id];
+  renderDisponibilidade(card, val);
+  salvarEstados();
+  showToast(val ? 'Disponibilidade atualizada! ✅' : 'Disponibilidade removida.');
+}
 let _tabNovoAtiva = 'existente';
 
 function abrirCardapioAdmin() {
@@ -3808,6 +3840,12 @@ function abrirCardapioAdmin() {
     btnPreco.className = 'card-preco-edit-btn';
     btnPreco.textContent = '✏️ Preço';
     btnPreco.onclick = () => ativarEdicaoPreco(card);
+    // botão disponibilidade sazonal
+    const btnDisp = document.createElement('button');
+    btnDisp.className = 'card-preco-edit-btn';
+    btnDisp.textContent = '🗓️ Disponib.';
+    btnDisp.title = 'Ex.: "Apenas aos finais de semana"';
+    btnDisp.onclick = () => ativarEdicaoDisponibilidade(card);
     // botão remover
     const btnRem = document.createElement('button');
     btnRem.className = 'card-remove-btn';
@@ -3816,6 +3854,7 @@ function abrirCardapioAdmin() {
     btnRem.onclick = () => removerItem(id, card);
     bar.appendChild(btnStock);
     bar.appendChild(btnPreco);
+    bar.appendChild(btnDisp);
     bar.appendChild(btnRem);
     card.appendChild(bar);
   });
@@ -3998,7 +4037,8 @@ function salvarEstados() {
     removidos: _itensRemovidos,
     precos: _precosCustom,
     itensCustom: _itensCustom,
-    categoriasCustum: _categoriasCustum
+    categoriasCustum: _categoriasCustum,
+    disponibilidades: _disponibilidades
   };
   localStorage.setItem('varanda_estados', JSON.stringify(estado)); // cache offline
   dbEstadoRef.set(estado);
@@ -4041,6 +4081,12 @@ function aplicarEstado(est) {
   Object.entries(_precosCustom).forEach(([id, preco]) => {
     const priceEl = document.querySelector(`[data-produto-id="${id}"] .card-price`);
     if (priceEl && !priceEl.querySelector('input')) priceEl.textContent = 'R$ ' + preco.toFixed(2).replace('.', ',');
+  });
+
+  /* disponibilidade sazonal/temporária — aplica e limpa quem não está mais na lista */
+  _disponibilidades = est.disponibilidades || {};
+  document.querySelectorAll('[data-produto-id]').forEach(card => {
+    renderDisponibilidade(card, _disponibilidades[card.dataset.produtoId] || '');
   });
 
   /* promoção */
