@@ -2743,7 +2743,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- ═══ ADMIN FABs ══════════════════════════════════════════════════ -->
-<button class="admin-fab" id="admin-fab" onclick="abrirLoginAdmin()">🔒 Admin</button>
+<button class="admin-fab visible" id="admin-fab" onclick="abrirLoginAdmin()">🔒 Admin</button>
 <button class="admin-logout-btn" id="admin-logout-btn" onclick="sairAdmin()">🚪 Sair</button>
 <button class="admin-promo-fab" id="admin-promo-fab" onclick="abrirModalPromo()">🔥 Promoção</button>
 <button class="admin-atendimento-fab" id="admin-atendimento-fab" onclick="toggleAtendimento()">📍 Atendimento</button>
@@ -3625,7 +3625,7 @@ function sairAdmin() {
   document.body.classList.remove('admin-mode');
   ['admin-logout-btn','admin-promo-fab','admin-atendimento-fab','admin-pausa-fab','admin-cardapio-fab','admin-config-fab','admin-add-fab']
     .forEach(id => document.getElementById(id)?.classList.remove('visible'));
-  document.getElementById('admin-fab').classList.remove('visible');
+  document.getElementById('admin-fab').classList.add('visible');
   showToast('Admin desconectado.');
 }
 
@@ -4121,11 +4121,6 @@ function carregarEstados() {
       aplicarEstado(est);
     }
   });
-}
-
-/* ─── URL ADMIN ─── */
-if (new URLSearchParams(location.search).get('admin') === '1') {
-  document.getElementById('admin-fab').classList.add('visible');
 }
 
 /* ─── SWIPE ENTRE CATEGORIAS ─── */
