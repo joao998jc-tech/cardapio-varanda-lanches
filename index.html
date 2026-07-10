@@ -829,14 +829,13 @@
     .dividir-neutral { color:var(--gold); }
 
     /* ─── ADMIN FABs ─── */
-    .admin-fab,.admin-logout-btn,.admin-promo-fab,.admin-atendimento-fab,.admin-pausa-fab,.admin-cardapio-fab,.admin-config-fab,.admin-add-fab {
+    .admin-logout-btn,.admin-promo-fab,.admin-atendimento-fab,.admin-pausa-fab,.admin-cardapio-fab,.admin-config-fab,.admin-add-fab {
       position:fixed; left:18px; z-index:201;
       border:none; border-radius:50px; padding:11px 16px;
       font-family:'Cinzel',serif; font-size:0.78rem; font-weight:700;
       cursor:pointer; display:none; align-items:center; gap:6px;
       transition:var(--transition); letter-spacing:0.3px;
     }
-    .admin-fab { bottom:22px; background:#1C1C1C; color:var(--text-sm); border:1px solid var(--border); box-shadow:var(--shadow); }
     .admin-logout-btn { bottom:22px; background:#c0392b; color:white; box-shadow:0 4px 16px rgba(192,57,43,.4); }
     .admin-promo-fab { bottom:76px; background:linear-gradient(135deg,var(--caramel),var(--wine)); color:white; box-shadow:0 4px 16px rgba(193,122,46,.4); }
     .admin-atendimento-fab { bottom:130px; background:#1a6b3a; color:white; box-shadow:var(--shadow); }
@@ -844,8 +843,26 @@
     .admin-cardapio-fab { bottom:238px; background:#0a3d62; color:white; box-shadow:var(--shadow); }
     .admin-config-fab { bottom:292px; background:#2c2c54; color:white; box-shadow:var(--shadow); }
     .admin-add-fab { bottom:346px; background:#145a32; color:white; box-shadow:0 4px 16px rgba(20,90,50,.5); }
-    .admin-fab.visible,.admin-logout-btn.visible,.admin-promo-fab.visible,.admin-atendimento-fab.visible,.admin-pausa-fab.visible,.admin-cardapio-fab.visible,.admin-config-fab.visible,.admin-add-fab.visible { display:flex; }
-    .admin-fab:hover,.admin-logout-btn:hover,.admin-promo-fab:hover,.admin-atendimento-fab:hover,.admin-pausa-fab:hover,.admin-cardapio-fab:hover,.admin-config-fab:hover,.admin-add-fab:hover { filter:brightness(1.15); }
+    .admin-logout-btn.visible,.admin-promo-fab.visible,.admin-atendimento-fab.visible,.admin-pausa-fab.visible,.admin-cardapio-fab.visible,.admin-config-fab.visible,.admin-add-fab.visible { display:flex; }
+    .admin-logout-btn:hover,.admin-promo-fab:hover,.admin-atendimento-fab:hover,.admin-pausa-fab:hover,.admin-cardapio-fab:hover,.admin-config-fab:hover,.admin-add-fab:hover { filter:brightness(1.15); }
+
+    /* Botão discreto de acesso ao admin, dentro do rodapé */
+    .footer-admin-btn {
+      margin-top: 10px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--border);
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      opacity: 0.55;
+      transition: var(--transition);
+    }
+    .footer-admin-btn:hover { opacity: 1; color: var(--text-sm); border-color: var(--text-sm); }
     /* Admin card overlays */
     .card-admin-bar { display:none; position:absolute; top:6px; right:6px; z-index:10; gap:5px; }
     .admin-mode .card-admin-bar { display:flex; }
@@ -2338,6 +2355,7 @@
   <p><strong>Varanda Lanches</strong></p>
   <p style="margin-top:6px;font-size:0.75rem;color:var(--text-sm);">📍 Av. Alexandre Chauar, 992 &nbsp;|&nbsp; 📞 (15) 99601-3988</p>
   <p style="margin-top:8px;font-size:0.68rem;color:var(--border);">Cardápio por <a href="https://avanziadigital.com.br" target="_blank" rel="noopener" style="color:var(--text-sm);text-decoration:none;font-weight:600;">avanziadigital.com.br</a></p>
+  <button type="button" id="admin-fab" class="footer-admin-btn" onclick="abrirLoginAdmin()">ADM</button>
 </footer>
 
 <!-- ═══ MODAL HAMBÚRGUER ════════════════════════════════════════════════ -->
@@ -2743,7 +2761,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- ═══ ADMIN FABs ══════════════════════════════════════════════════ -->
-<button class="admin-fab visible" id="admin-fab" onclick="abrirLoginAdmin()">🔒 Admin</button>
 <button class="admin-logout-btn" id="admin-logout-btn" onclick="sairAdmin()">🚪 Sair</button>
 <button class="admin-promo-fab" id="admin-promo-fab" onclick="abrirModalPromo()">🔥 Promoção</button>
 <button class="admin-atendimento-fab" id="admin-atendimento-fab" onclick="toggleAtendimento()">📍 Atendimento</button>
@@ -3614,7 +3631,7 @@ function tentarLogin() {
     document.body.classList.add('admin-mode');
     ['admin-logout-btn','admin-promo-fab','admin-atendimento-fab','admin-pausa-fab','admin-cardapio-fab','admin-config-fab','admin-add-fab']
       .forEach(id => document.getElementById(id)?.classList.add('visible'));
-    document.getElementById('admin-fab').classList.remove('visible');
+    document.getElementById('admin-fab').style.display = 'none';
     showToast('Modo admin ativado ✅');
   } else {
     document.getElementById('admin-erro').style.display = '';
@@ -3625,7 +3642,7 @@ function sairAdmin() {
   document.body.classList.remove('admin-mode');
   ['admin-logout-btn','admin-promo-fab','admin-atendimento-fab','admin-pausa-fab','admin-cardapio-fab','admin-config-fab','admin-add-fab']
     .forEach(id => document.getElementById(id)?.classList.remove('visible'));
-  document.getElementById('admin-fab').classList.add('visible');
+  document.getElementById('admin-fab').style.display = '';
   showToast('Admin desconectado.');
 }
 
