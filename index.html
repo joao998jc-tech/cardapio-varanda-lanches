@@ -3613,21 +3613,15 @@ function finalizarPedido() {
   let agendInfo = _checkoutAgendamento ? '🕒 *Agendado para:* ' + _checkoutAgendamento + '\n\n' : '';
   let pagInfo = _checkoutPagamento ? '💳 *PAGAMENTO:* ' + _checkoutPagamento : '';
 
-  const cod = (function(){
-    const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];return s;
-  })();
-
   const msg =
     '🍔 *NOVO PEDIDO — VARANDA LANCHES*\n' + DIV + '\n\n' +
-    '👤 *Cliente:* ' + (_checkoutNome || '') + '\n\n' +
     agendInfo +
     '*ITENS*\n' + blocoItens + '\n\n' + DIV + '\n\n' +
     '*RESUMO*\n' + blocoRes + '\n\n' +
     entregaInfo + '\n\n' +
     pagInfo + '\n\n' +
     'Obrigado(a)! Aguardo confirmação. 😊\n' +
-    '📋 Cód: ' + cod;
+    '👤 Cliente: ' + (_checkoutNome || '');
 
   setTimeout(() => {
     window.open('https://wa.me/' + WHATSAPP_NUM + '?text=' + encodeURIComponent(msg), '_blank');
