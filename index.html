@@ -2587,6 +2587,21 @@
   </div>
 </div>
 
+<!-- ═══ CHECKOUT — NOME ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-checkout-nome">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Seu nome">
+    <div class="modal-header">
+      <div class="modal-title">🙋 Qual é o seu nome?</div>
+      <button class="modal-close" onclick="cancelarCheckout('nome')" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.82rem;color:var(--text-sm);margin-bottom:10px;">Para identificarmos seu pedido.</p>
+      <input type="text" id="checkout-nome-input" class="obs-textarea" style="font-size:1rem;" placeholder="Digite seu nome" oninput="checkNomeInput()" maxlength="60" />
+      <button class="btn-confirm" id="btn-confirmar-nome" onclick="confirmarNome()" disabled>Continuar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ CHECKOUT — QUANDO ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-checkout-quando">
   <div class="modal" role="dialog" aria-modal="true" aria-label="Quando quer receber">
@@ -2938,6 +2953,7 @@ let TAXA_ENTREGA = 5.00;
 /* ─── ESTADO ─── */
 let cart = [];
 let _checkoutTipo = null;
+let _checkoutNome = null;
 let _checkoutEndereco = null;
 let _checkoutPagamento = null;
 let _checkoutAgendamento = null;
@@ -3301,6 +3317,7 @@ function cancelarCheckout(id) {
   closeModal('checkout-' + id);
   _checkoutModaisStack = [];
   _checkoutTipo = null;
+  _checkoutNome = null;
   _checkoutEndereco = null;
   _checkoutPagamento = null;
 }
@@ -3318,7 +3335,20 @@ function temBebida() {
 }
 
 function _irParaCheckout() {
-  _checkoutTipo = null; _checkoutEndereco = null; _checkoutPagamento = null;
+  _checkoutTipo = null; _checkoutNome = null; _checkoutEndereco = null; _checkoutPagamento = null;
+  _abrirCheckoutModal('nome');
+}
+
+function checkNomeInput() {
+  const val = document.getElementById('checkout-nome-input').value.trim();
+  document.getElementById('btn-confirmar-nome').disabled = val.length === 0;
+}
+
+function confirmarNome() {
+  const val = document.getElementById('checkout-nome-input').value.trim();
+  if (!val) return;
+  _checkoutNome = val;
+  fecharCheckoutModal('nome');
   _abrirCheckoutModal('quando');
 }
 
@@ -3527,6 +3557,7 @@ function renderResumo() {
   document.getElementById('resumo-total').textContent = formatBRL(subtotal + taxa);
   const info = document.getElementById('resumo-entrega-info');
   let infoTxt = '';
+  if (_checkoutNome) infoTxt += '👤 <strong>' + _checkoutNome + '</strong><br>';
   if (_checkoutTipo === 'entrega') infoTxt += '🛵 <strong>Entrega</strong><br>' + (_checkoutEndereco || '');
   else infoTxt += '🏃 <strong>Retirada no local</strong>';
   if (_checkoutPagamento) infoTxt += '<br>💳 ' + _checkoutPagamento;
@@ -3589,6 +3620,7 @@ function finalizarPedido() {
 
   const msg =
     '🍔 *NOVO PEDIDO — VARANDA LANCHES*\n' + DIV + '\n\n' +
+    '👤 *Cliente:* ' + (_checkoutNome || '') + '\n\n' +
     agendInfo +
     '*ITENS*\n' + blocoItens + '\n\n' + DIV + '\n\n' +
     '*RESUMO*\n' + blocoRes + '\n\n' +
@@ -3601,7 +3633,7 @@ function finalizarPedido() {
     window.open('https://wa.me/' + WHATSAPP_NUM + '?text=' + encodeURIComponent(msg), '_blank');
     cart = [];
     updateCartUI();
-    _checkoutTipo = _checkoutEndereco = _checkoutPagamento = _checkoutAgendamento = null;
+    _checkoutTipo = _checkoutNome = _checkoutEndereco = _checkoutPagamento = _checkoutAgendamento = null;
   }, 400);
 }
 
